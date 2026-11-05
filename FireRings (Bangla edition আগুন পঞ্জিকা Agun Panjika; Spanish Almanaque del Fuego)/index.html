@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>FireRings — আগুন পঞ্জিকা — Almanaque del Fuego</title>
+    <meta
+      name="description"
+      content="25 years of Earth's fire memory, unbroken. A harmonized MODIS + VIIRS burning-activity calendar with uncertainty."
+    />
+    <meta name="theme-color" content="#f8f6f1" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#14171f" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <script>
+      // Apply the theme before first paint to avoid a flash.
+      try {
+        var m = localStorage.getItem("fr-theme");
+        var d = m === "dark" || ((!m || m === "system") && matchMedia("(prefers-color-scheme: dark)").matches);
+        if (d) document.documentElement.classList.add("dark");
+      } catch (e) {}
+    </script>
+    <style>
+      .boot { font-family: system-ui, sans-serif; color: #2a2f3a; min-height: 100vh; background: #f8f6f1; }
+      .dark .boot { color: #eceef2; background: #14171f; }
+      .boot-bar { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid rgba(127,127,127,.2); font-size: 16px; }
+      .boot-main { max-width: 44rem; padding: 32px 16px; }
+      .boot-main h1 { font-size: 28px; line-height: 1.25; margin: 0 0 12px; font-weight: 650; }
+      .boot-main p { font-size: 16px; line-height: 1.6; margin: 0 0 8px; opacity: .85; }
+      .boot-main .boot-lead { font-size: 20px; line-height: 1.5; margin-bottom: 16px; opacity: 1; }
+      .boot-main .boot-wait { margin-top: 20px; font-size: 14px; opacity: .65; }
+    </style>
+  </head>
+  <body>
+    <div id="root">
+      <!-- Static first paint: shown before JavaScript runs, replaced when the app mounts. -->
+      <div class="boot">
+        <header class="boot-bar">
+          <svg viewBox="0 0 32 32" width="32" height="32" aria-hidden="true"><circle cx="16" cy="16" r="14" fill="none" stroke="currentColor" stroke-opacity=".35" stroke-width="2"/><circle cx="16" cy="16" r="9.5" fill="none" stroke="currentColor" stroke-opacity=".6" stroke-width="2"/><circle cx="16" cy="16" r="5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 2A14 14 0 0 1 28.1 9" fill="none" stroke="#e8682a" stroke-width="3.2" stroke-linecap="round"/><circle cx="16" cy="16" r="1.8" fill="#e8682a"/></svg>
+          <strong>FireRings</strong>
+        </header>
+        <main class="boot-main">
+          <h1>FireRings · আগুন পঞ্জিকা · Almanaque del Fuego</h1>
+          <p class="boot-lead">25 years of Earth's fire memory, unbroken. One consistent record from the MODIS and VIIRS satellites shows, for any place, which months are critical, which years were worst, how this month compares with history, and whether the fire season started early.</p>
+          <p lang="bn">পৃথিবীর ২৫ বছরের আগুনের স্মৃতি, নিরবচ্ছিন্ন।</p>
+          <p lang="es">25 años de memoria del fuego de la Tierra, sin cortes.</p>
+          <p class="boot-wait">Loading the fire calendar…</p>
+        </main>
+      </div>
+    </div>
+    <noscript>FireRings needs JavaScript to draw its charts.</noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

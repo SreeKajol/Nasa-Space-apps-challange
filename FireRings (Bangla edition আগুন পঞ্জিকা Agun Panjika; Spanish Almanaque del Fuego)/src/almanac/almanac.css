@@ -1,0 +1,39 @@
+/* Printable almanac: one A4 page, black-and-white safe (patterns + icons), no UI chrome. */
+
+.alm-page {
+  max-width: 210mm;
+  margin: 0 auto;
+  padding: 12mm;
+  background: #fff;
+  color: #000;
+}
+body:has(.alm-page) {
+  background: #e9e7e2;
+}
+.alm-page .chip {
+  border-width: 2px;
+  color: #000 !important;
+  background: #fff !important;
+}
+
+@page {
+  size: A4;
+  margin: 10mm;
+}
+
+@media print {
+  body:has(.alm-page) {
+    background: #fff;
+  }
+  .alm-page {
+    max-width: none;
+    padding: 0;
+  }
+  .alm-noprint {
+    display: none !important;
+  }
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
