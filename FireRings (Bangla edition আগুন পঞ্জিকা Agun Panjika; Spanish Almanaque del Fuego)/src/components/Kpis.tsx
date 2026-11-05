@@ -9,6 +9,7 @@ import { useSettings } from "@/state/settings";
 import { cn } from "@/lib/utils";
 import { ProvenanceBadge, STATUS_ICON, StatusChip } from "./common";
 import { OnsetDrawer } from "./OnsetDrawer";
+import { MlOutlookStandalone, MlOutlookToggle } from "@/ml/inline";
 
 function Kpi({ label, children, caption, accent, className }: { label: string; children: ReactNode; caption: ReactNode; accent?: boolean; className?: string }) {
   const { lang, region } = useApp();
@@ -170,7 +171,8 @@ function BigCard({ icon, emoji, title, children }: { icon: ReactNode; emoji: str
 export function OutlookCard() {
   const { lang, region } = useApp();
   const out = region?.outlook;
-  if (!region || !out || out.length === 0) return null;
+  if (!region) return null;
+  if (!out || out.length === 0) return <MlOutlookStandalone />;
   const skilful = out.filter((o) => o.rpss > 0);
   return (
     <section className="card p-4" aria-labelledby="outlook-h">
@@ -186,6 +188,7 @@ export function OutlookCard() {
           ))}
         </ul>
       )}
+      <MlOutlookToggle />
     </section>
   );
 }

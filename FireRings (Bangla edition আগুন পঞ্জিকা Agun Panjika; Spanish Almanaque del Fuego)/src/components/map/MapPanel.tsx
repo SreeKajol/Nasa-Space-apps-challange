@@ -13,6 +13,7 @@ import { digits, monthYear, num, t, tf } from "@/i18n";
 import { useApp } from "@/state/app";
 import { useSettings } from "@/state/settings";
 import { cn } from "@/lib/utils";
+import { RiskLayer, RiskLegend, RiskToggle } from "@/ml/RiskLayer";
 
 const GIBS =
   "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/{date}/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg";
@@ -197,6 +198,7 @@ export default function MapPanel() {
               />
             ))}
           {area && <LPolygon positions={area.polygon.map(([lon, lat]) => [lat, lon] as [number, number])} pathOptions={{ color: "#f26b1d", weight: 3, fillOpacity: 0 }} />}
+          <RiskLayer />
           <Pane name="hot" style={{ zIndex: 450 }}>
             {monthHotspots.slice(0, 2500).map((h, i) => (
               <CircleMarker key={i} center={[h.latitude, h.longitude]} radius={3.5} pathOptions={{ color: "#fff", weight: 0.8, fillColor: "#f26b1d", fillOpacity: 0.95 }} />
@@ -221,6 +223,7 @@ export default function MapPanel() {
             </button>
           ))}
         </fieldset>
+        <RiskToggle />
         {url.base === "sat" && (
           <label className="inline-flex items-center gap-1.5">
             <span className="text-muted-foreground">{t(lang, "map.date")}</span>
@@ -242,6 +245,7 @@ export default function MapPanel() {
           )}
         </div>
       )}
+      <RiskLegend />
       <p className="text-xs text-muted-foreground">{t(lang, "map.draw_hint")}</p>
       <CoordForm onArea={onArea} />
       <p className="text-[11px] text-muted-foreground">{url.base === "sat" ? tf(lang, "map.gibs_note", { date: digits(lang, gdate) }) : ESRI_ATTR.replace(/<[^>]+>/g, "").replace("&amp;", "&").replace(/&copy;/g, "©")}</p>

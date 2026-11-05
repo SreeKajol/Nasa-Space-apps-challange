@@ -11,7 +11,7 @@ Built for NASA Space Apps 2026 (challenge: *Harmonization of MODIS and VIIRS Hot
 ```sh
 npm install
 npm run dev        # http://localhost:5173
-npm test           # 32 unit tests (statistics, adapters, data contract, i18n, URL state)
+npm test           # 44 unit tests (statistics, adapters, data contract, i18n, URL state, ML layer)
 npm run build      # typecheck + static build into dist/
 npm run preview    # serve dist/ locally (service worker + offline mode active here)
 ```
@@ -79,6 +79,31 @@ The contract in the brief is implemented exactly (`src/data/types.ts`). Where it
 Every shareable setting lives in the URL, for example:
 `?lang=bn&area=parana-delta&from=2015-01&mode=viirs&tab=rings&view=anomaly&rows=fire&m=2020-08`.
 
+## FireRings Intelligence (ML layer)
+
+An additive layer on top of the app. If its files are missing, the app behaves exactly as before.
+
+- **ML harmonization.** XGBoost learns *why* MODIS and VIIRS disagree, benchmarked against the stratified ratio method.
+- **Conformal 90% intervals.** Coverage is checked per land cover, country and activity level.
+- **TreeSHAP explanations.** Global drivers, plus a "Why this month?" waterfall in the month drawer.
+- **FireCast.** Below / near / above-normal outlooks, shown only where hindcasts beat climatology.
+- **Grounded narratives.** Templates in EN/BN/ES; no model writes a number.
+- **Demo moment.** "Train on raw vs harmonized" shows the fake jump that raw-trained AI learns when VIIRS arrives.
+
+```sh
+pip install -r requirements-ml.txt   # CPU only; use a venv OUTSIDE this folder (its name contains ';')
+npm run ml                           # = make ml: demo inputs if no pipeline files, then train,
+                                     #   validate, explain, forecast, export -> public/data/ml/
+python -m pytest tests/ml -q         # leakage, conformal coverage, scores, schema, determinism
+```
+
+- **Real data.** The pipeline writes `data-products/index.json`, `region/*.json` and `ml_inputs/cell_month.parquet` (schema in [docs/ml_features.md](docs/ml_features.md)).
+- **Demo data.** The demo exporter dumps the browser demo's cell field. The ML layer simulates sensor observations on it, and every output is labelled `demo`.
+- **Further reading.**
+  - Method and validation table: [docs/ml_method.md](docs/ml_method.md)
+  - Plans: [docs/ml_plan.md](docs/ml_plan.md), [docs/ml_frontend_plan.md](docs/ml_frontend_plan.md)
+  - AI-use log: [docs/AI_USE.md](docs/AI_USE.md)
+
 ## Code map
 
 ```
@@ -91,6 +116,9 @@ src/i18n/{en,bn,es}.json   every UI string; summaries are templates with {placeh
 src/state/                 URL state, device preferences, app context
 src/components/            shell, top bar, KPIs, drawers, map, charts (D3), method tab
 src/almanac/               printable A4 page (second Vite entry: almanac/index.html)
+src/compute/ml/            Python ML layer: features, harmonize_ml, conformal, explain, firecast, narrative, run
+src/ml/                    ML frontend: MLProvider (static + mock), Intelligence tab, drawer section, risk layer
+tests/ml/                  Python tests for the ML layer
 public/sw.js               service worker
 scripts/generate-demo-data.ts
 ```

@@ -1,9 +1,12 @@
-import { CalendarDays, ChartLine, CircleDot, FlaskConical, MapIcon, WifiOff, BarChart3 } from "lucide-react";
+import { CalendarDays, ChartLine, CircleDot, FlaskConical, MapIcon, WifiOff, BarChart3, Sparkles } from "lucide-react";
 import { lazy, startTransition, Suspense, useEffect, useState, type ReactNode } from "react";
 import { baseMode } from "@/data/view";
 import { dateLong, digits, num, t, tf } from "@/i18n";
 import { nowSummary } from "@/i18n/summaries";
 import { cn } from "@/lib/utils";
+import { useMl } from "@/ml/hooks";
+import { mt } from "@/ml/i18n";
+import { AlertStrip, IntelligenceTab } from "@/ml/inline";
 import { useApp } from "@/state/app";
 import { useMedia } from "@/state/settings";
 import { TABS, type Tab } from "@/state/url";
@@ -29,8 +32,9 @@ const TAB_ICON: Record<Tab, ReactNode> = {
   series: <ChartLine className="size-4" aria-hidden="true" />,
   profile: <BarChart3 className="size-4" aria-hidden="true" />,
   method: <FlaskConical className="size-4" aria-hidden="true" />,
+  intel: <Sparkles className="size-4" aria-hidden="true" />,
 };
-const TAB_LABEL: Record<Tab, "tab.calendar" | "tab.rings" | "tab.series" | "tab.profile" | "tab.method"> = {
+const TAB_LABEL: Record<Exclude<Tab, "intel">, "tab.calendar" | "tab.rings" | "tab.series" | "tab.profile" | "tab.method"> = {
   calendar: "tab.calendar",
   rings: "tab.rings",
   series: "tab.series",
@@ -197,6 +201,7 @@ function LazyTab({ children }: { children: ReactNode }) {
 function Dashboard() {
   const { lang, url, setUrl, regionQ, region } = useApp();
   const ready = useAfterFirstPaint();
+  const ml = useMl();
   if (regionQ.isError) return <ErrorState lang={lang} error={regionQ.error} onRetry={() => void regionQ.refetch()} />;
   if (!region)
     return (
@@ -217,17 +222,27 @@ function Dashboard() {
           {tf(lang, "mode.raw_note", { sensor: t(lang, `mode.${bm}`) })}
         </p>
       )}
+      <AlertStrip />
       <KpiRow />
       <OutlookCard />
-      <Tabs id="analysis" value={url.tab} onValueChange={(v) => setUrl({ tab: v as Tab })}>
+      <Tabs id="analysis" value={url.tab === "intel" && ml.missing ? "calendar" : url.tab} onValueChange={(v) => setUrl({ tab: v as Tab })}>
         <div className="scroll-x -mx-1 px-1">
           <TabsList aria-label={t(lang, "tabs.label")} className="h-auto gap-1 rounded-lg p-1">
-            {TABS.map((tab) => (
-              <TabsTrigger key={tab} value={tab} className="min-h-11 gap-1.5 px-3">
-                {TAB_ICON[tab]}
-                {t(lang, TAB_LABEL[tab])}
-              </TabsTrigger>
-            ))}
+            {TABS.map((tab) =>
+              tab === "intel" ? (
+                ml.ready && (
+                  <TabsTrigger key={tab} value={tab} className="min-h-11 gap-1.5 px-3">
+                    {TAB_ICON[tab]}
+                    {mt(lang, "tab")}
+                  </TabsTrigger>
+                )
+              ) : (
+                <TabsTrigger key={tab} value={tab} className="min-h-11 gap-1.5 px-3">
+                  {TAB_ICON[tab]}
+                  {t(lang, TAB_LABEL[tab])}
+                </TabsTrigger>
+              ),
+            )}
           </TabsList>
         </div>
         <TabsContent value="calendar" className="mt-3">
@@ -244,6 +259,9 @@ function Dashboard() {
         </TabsContent>
         <TabsContent value="method" className="mt-3">
           <LazyTab><MethodTab /></LazyTab>
+        </TabsContent>
+        <TabsContent value="intel" className="mt-3">
+          {ml.ready ? <LazyTab><IntelligenceTab /></LazyTab> : <TabFallback />}
         </TabsContent>
       </Tabs>
       <WhenVisible minHeight="34rem">
