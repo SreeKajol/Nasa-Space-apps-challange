@@ -2,9 +2,91 @@
 
 **25 years of Earth's fire memory, unbroken.**
 
-A harmonized burning-activity calendar built from satellite fire hotspots. MODIS (2000→, ~1 km) and VIIRS (375 m; Suomi-NPP 2012–Oct 2026, NOAA-20 2018→, NOAA-21 2023→) count fires differently, so raw records jump when VIIRS starts. The data pipeline harmonizes them into one sensor-agnostic series with uncertainty intervals. This app lets anyone pick an area and a period and see which months are critical, which years were worst, how this month compares with the historical median, and whether the season started early. They can also hear it, print it, and download it.
+**[▶ Open the live app](https://kajoldebnath01-firerings.static.hf.space/index.html?area=sundarbans)** · [Hugging Face Space](https://huggingface.co/spaces/kajoldebnath01/FireRings) · [Source code](https://github.com/SreeKajol/Nasa-Space-apps-challange) · Demo video: `[add YouTube link]` · Slides: `[add Google Drive link]`
 
-Built for NASA Space Apps 2026 (challenge: *Harmonization of MODIS and VIIRS Hot Spots*) by Team HalluciNation. Open source, Apache-2.0. **Not an official NASA product.**
+NASA Space Apps 2026 · Challenge: *Harmonization of MODIS and VIIRS Hot Spots* · Team HalluciNation (Bangladesh)
+
+![FireRings showing the Sundarbans: hotspot-density map, this month vs median, season onset, peak month, worst year, harmonization evidence and the 3-month outlook](docs/screenshots/overview.png)
+
+> The live app currently runs on **demo data**: synthetic numbers, labelled `demo` on every card. Real NASA FIRMS data needs a free FIRMS key; see [Reproduce with real data](#reproduce-with-real-data).
+
+## The problem
+
+NASA has watched Earth's fires from space since 2000. MODIS (about 1 km pixels) runs from 2000, and the sharper VIIRS (375 m) from 2012. VIIRS sees many more small fires, so **a raw fire record jumps when VIIRS arrives**. That jump comes from a better sensor, not from more fires. Anyone reading the raw record, or any model trained on it, wrongly concludes that fires suddenly got worse.
+
+## Our solution
+
+FireRings joins MODIS and VIIRS into **one sensor-agnostic record from 2000 to today**, with an uncertainty band on every number. On that record, anyone can pick an area and a period and see:
+
+- which months are critical, and when the fire season usually starts;
+- which years were the worst;
+- whether **this month** is unusual compared with the historical median;
+- whether **this season started early**.
+
+It speaks **English, বাংলা and Español**, works **offline**, can be **heard** as sound, **printed** as a one-page almanac, and downloaded as CSV.
+
+## Try it in 60 seconds
+
+| # | What to do | Live link |
+| --- | --- | --- |
+| 1 | **See the problem.** Raw MODIS and VIIRS side by side: the jump when VIIRS starts. | [Compare sensors](https://kajoldebnath01-firerings.static.hf.space/index.html?area=sundarbans&mode=compare&tab=series) |
+| 2 | **See the fix.** Harmonized series with its uncertainty band. Press **Show the sensor break** to watch the raw lines merge into one. | [Harmonized time series](https://kajoldebnath01-firerings.static.hf.space/index.html?area=sundarbans&tab=series) |
+| 3 | **Read the season.** Years × months calendar; click any month for details. | [Burning calendar](https://kajoldebnath01-firerings.static.hf.space/index.html?area=sundarbans) |
+| 4 | **Watch 25 years.** Press play on the tree-ring chart. | [Fire Rings](https://kajoldebnath01-firerings.static.hf.space/index.html?area=sundarbans&tab=rings) |
+| 5 | **Ask why.** ML explanations, 90% intervals and the FireCast outlook. | [Intelligence](https://kajoldebnath01-firerings.static.hf.space/index.html?area=sundarbans&tab=intel) |
+| 6 | **For everyone.** The same view in Bangla; press the speaker icon to **hear the season**. | [বাংলা](https://kajoldebnath01-firerings.static.hf.space/index.html?lang=bn&area=sundarbans) |
+| 7 | **Across the world.** Paraná Delta, Argentina, in Spanish. | [Español](https://kajoldebnath01-firerings.static.hf.space/index.html?lang=es&area=parana-delta&tab=rings) |
+| 8 | **On paper.** One printable A4 page with a QR code back to the live view. | [Almanac](https://kajoldebnath01-firerings.static.hf.space/almanac/index.html?area=sundarbans) |
+
+You can also draw your own area on the map (rectangle, polygon or pin + radius) or type `lat, lon` into the search box.
+
+## Highlights
+
+| | |
+| --- | --- |
+| **Science** | MODIS + VIIRS harmonized per region and calendar month on a 5.5 km grid. 90% uncertainty bands checked by leave-one-year-out validation. A Pettitt change-point test checks the 2012 seam before and after harmonization. |
+| **Intelligence** | XGBoost explains *why* the sensors disagree, benchmarked against the ratio method. Conformal 90% intervals, TreeSHAP "Why this month?", and FireCast outlooks shown only where they beat climatology. No AI model writes any number. |
+| **Inclusion** | English, বাংলা, Español. Sonification for blind users, screen-reader summaries and "View as table" on every chart, simple view, colour-blind-safe palette, printable almanac, offline PWA. |
+| **Engineering** | Static site, no server, no keys. 47 frontend tests and 56 Python tests. Lighthouse mobile: performance ≥ 91, accessibility 100. Every view is a shareable URL. |
+
+## NASA data used
+
+| Source | What it gives FireRings |
+| --- | --- |
+| **FIRMS**: MODIS C6.1 and VIIRS 375 m active fires | The fire hotspots, 2000 to today |
+| **POWER** | Monthly temperature, rainfall and humidity for each region |
+| **EONET** | Independent wildfire events, used to check the calendar |
+| **GIBS** | Satellite true-colour imagery under the map |
+
+Full citations and DOIs: [Data citation](#data-citation).
+
+## Team HalluciNation
+
+| Name | Role |
+| --- | --- |
+| `[Name 1]` | Data pipeline |
+| `[Name 2]` | Harmonization model |
+| `[Name 3]` | Design and accessibility |
+| `[Name 4]` | Front end |
+
+Open source, Apache-2.0. **Not an official NASA product.** How AI coding assistants were used: [docs/AI_USE.md](docs/AI_USE.md).
+
+## 30-second demo video plan
+
+Every shot below shows a feature that exists in the app.
+
+| Time | On screen | Voice / English subtitle |
+| --- | --- | --- |
+| 0:00–0:03 | Logo + "Team HalluciNation" | "We're Team HalluciNation from Bangladesh." |
+| 0:03–0:07 | Compare view: raw records jump in 2012 | "NASA's fire records jump in 2012. Not more fires, just a new satellite." |
+| 0:07–0:10 | Title card: FireRings · 25 years of Earth's fire memory, unbroken | "Meet FireRings." |
+| 0:10–0:15 | Time series → **Show the sensor break**: the jump disappears | "We harmonize MODIS and VIIRS into one record, with uncertainty." |
+| 0:15–0:20 | Sundarbans → calendar → "This month vs median" card | "Pick any area: see its fire season, worst years, and whether this month is unusual." |
+| 0:20–0:24 | Switch to বাংলা → speaker icon → printable almanac | "In Bangla, English and Spanish, offline, even as sound." |
+| 0:24–0:28 | Paraná Delta in Spanish; text: NASA FIRMS · POWER · EONET · GIBS | "Built on NASA open data, from Bangladesh to Argentina." |
+| 0:28–0:30 | End card: FireRings + live link | "Fire history, for everyone." |
+
+Rules: 30 seconds or less, English subtitles, no NASA logo, no one under 18, and the link must open without logging in.
 
 ## Run it
 
@@ -163,7 +245,8 @@ scripts/generate-demo-data.ts
 
 ## Before submission — placeholders to fill
 
-- Team member names: `AboutDialog` in `src/components/TopBar.tsx`
+- Demo video and slides links: the link line at the top of this README
+- Team member names: the "Team HalluciNation" table in this README, and `AboutDialog` in `src/components/TopBar.tsx`
 - Repository URL: same dialog
 - Method PDF URL: `METHOD_PDF` in `src/components/MethodTab.tsx`
 - `m.p_conf_v` ("MODIS ≥ 30%; VIIRS nominal or high") in `src/i18n/*.json` matches the real pipeline's filter (`config/real_data.yaml` → `clean`); keep them in sync if you change it
