@@ -10,6 +10,7 @@ import { coefficientsCsv, monthlyCsv } from "@/lib/exports";
 import { useApp } from "@/state/app";
 import { Card } from "./common";
 import { downloadFile } from "./hooks";
+import { RealDataCard, SeamBadge } from "./RealData";
 
 const METHOD_PDF = "https://example.org/firerings/method.pdf"; // placeholder until the paper is published
 
@@ -54,6 +55,8 @@ export function MethodTab() {
         </ol>
       </Card>
 
+      <RealDataCard />
+
       <div className="grid gap-4 xl:grid-cols-2">
         <Card title={t(lang, "m.val_title")} accent>
           {v ? (
@@ -84,6 +87,11 @@ export function MethodTab() {
             {seamMiniSummary(lang, hview.points, index.viirs_start)}
           </p>
           <SeamMini points={hview.points} viirsStart={index.viirs_start} />
+          {region.seam_test && (
+            <div className="mt-3">
+              <SeamBadge seam={region.seam_test} lang={lang} />
+            </div>
+          )}
         </Card>
       </div>
 

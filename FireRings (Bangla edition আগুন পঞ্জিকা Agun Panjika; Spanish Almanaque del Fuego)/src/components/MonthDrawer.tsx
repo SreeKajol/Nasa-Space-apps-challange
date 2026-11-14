@@ -10,6 +10,7 @@ import { useApp } from "@/state/app";
 import { errorText, ProvenanceBadge, Skeleton, StatusChip } from "./common";
 import { Drawer } from "./Drawer";
 import { DailyBars } from "./charts/SmallCharts";
+import { WhyThisMonthSlot } from "@/ml/inline";
 
 /** Click a calendar cell → this drawer: the month's numbers, daily bars and summary. */
 export function MonthDrawer() {
@@ -54,6 +55,7 @@ export function MonthDrawer() {
             <dt className="text-muted-foreground">{t(lang, "col.viirs")}</dt>
             <dd className="text-right">{num(lang, hp.viirs)}</dd>
           </dl>
+          <WhyThisMonthSlot ym={ym!} />
           <section aria-labelledby="dr-daily">
             <h3 id="dr-daily" className="mb-1 text-sm font-semibold">
               {t(lang, "dr.daily")}

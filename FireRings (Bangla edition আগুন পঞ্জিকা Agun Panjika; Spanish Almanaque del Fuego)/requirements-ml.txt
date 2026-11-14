@@ -1,0 +1,10 @@
+# FireRings Intelligence layer (src/compute/ml). CPU only, Python >= 3.11.
+# Tested with the versions below. TreeSHAP comes from XGBoost itself
+# (pred_contribs), so the `shap` package is optional and not required.
+numpy>=2.0        # tested 2.5.4
+pandas>=2.2       # tested 3.1.1
+pyarrow>=15       # tested 26.0.1
+scipy>=1.11       # tested 1.18.1
+scikit-learn>=1.4 # tested 1.9.1
+xgboost>=2.0      # tested 3.4.1
+pytest>=8         # tested 9.2.0

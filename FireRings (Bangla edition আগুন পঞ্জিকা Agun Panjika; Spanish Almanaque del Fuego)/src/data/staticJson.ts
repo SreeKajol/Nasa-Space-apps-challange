@@ -126,7 +126,23 @@ export class StaticJsonAdapter implements DataProvider {
   }
 
   private provenance(cached: boolean, index: IndexMeta): Provenance {
+    // A real-data snapshot (make snapshot) is a saved copy by definition: "cache", never "live".
+    if (index.data_mode === "real" && index.source === "cache") return "cache";
     return cached ? "cache" : index.source === "cache" ? "live" : index.source;
+  }
+
+  /** Date a real-data snapshot was generated, shown with its "cache" badge. */
+  private snapshotDate(index: IndexMeta): string | undefined {
+    return index.data_mode === "real" && index.source === "cache" ? index.generated_at : undefined;
+  }
+
+  /** Additive files of real-data runs (e.g. validation/eonet_{id}.json); null when absent. */
+  async getExtra<T>(path: string): Promise<T | null> {
+    try {
+      return (await this.json<T>(path)).data;
+    } catch {
+      return null;
+    }
   }
 
   getIndex(): Promise<IndexMeta> {
@@ -156,6 +172,7 @@ export class StaticJsonAdapter implements DataProvider {
     const { data, cached, savedAt } = await this.json<RegionData>(`region/${encodeURIComponent(id)}.json`);
     const out: RegionData = { ...data, source: this.provenance(cached || this.indexCached, index) };
     if (cached && savedAt) out.saved_at = savedAt;
+    else if (this.snapshotDate(index)) out.saved_at = this.snapshotDate(index);
     return out;
   }
 

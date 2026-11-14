@@ -11,7 +11,7 @@ import { detectLang, LANG_IDS, type Lang } from "@/i18n";
  * Defaults are omitted to keep links short.
  */
 
-export const TABS = ["calendar", "rings", "series", "profile", "method"] as const;
+export const TABS = ["calendar", "rings", "series", "profile", "method", "intel"] as const;
 export type Tab = (typeof TABS)[number];
 export type Basemap = "sat" | "street";
 export type CalView = "counts" | "anomaly";
@@ -43,6 +43,8 @@ export interface UrlState {
   base: Basemap;
   /** NASA GIBS imagery date (YYYY-MM-DD). */
   gdate: string | null;
+  /** Map: FireCast "next-month risk" layer (Intelligence layer). */
+  risk: boolean;
 }
 
 /** Polygon codec: "lon_lat~lon_lat~…" — URL-safe without escaping. */
@@ -97,6 +99,7 @@ export function parseState(search: string): UrlState {
     roll: q.get("roll") === "1",
     base: q.get("base") === "street" ? "street" : "sat",
     gdate: gdate && /^\d{4}-\d{2}-\d{2}$/.test(gdate) ? gdate : null,
+    risk: q.get("risk") === "1",
   };
 }
 
@@ -118,6 +121,7 @@ export function serializeState(s: UrlState): string {
   if (s.roll) q.set("roll", "1");
   if (s.base !== "sat") q.set("base", s.base);
   if (s.gdate) q.set("gdate", s.gdate);
+  if (s.risk) q.set("risk", "1");
   return `?${q.toString()}`;
 }
 

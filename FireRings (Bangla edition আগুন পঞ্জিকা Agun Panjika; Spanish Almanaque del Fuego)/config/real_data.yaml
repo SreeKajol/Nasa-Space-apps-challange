@@ -1,0 +1,111 @@
+# FireRings real-data configuration, read by `make fetch` / `make real`
+# (npm run fetch / npm run real). Plan and rationale: docs/real_data_plan.md.
+# The FIRMS key is NOT here: put FIRMS_MAP_KEY in .env (see .env.example).
+
+date_range:
+  start: auto          # "auto" = first date MODIS_SP lists in data_availability; or "YYYY-MM-DD"
+  end: today           # "today" (UTC) or "YYYY-MM-DD"
+
+# Regions: the app's presets (same ids, names, bboxes as src/data/mock.ts).
+# bbox = [minLon, minLat, maxLon, maxLat]. `landcover` is a documented
+# region-level class (MCD12Q1 is not ingested; see docs/real_data_plan.md).
+regions:
+  - id: sundarbans
+    name: { en: Sundarbans, bn: সুন্দরবন, es: Sundarbans }
+    country: BD
+    bbox: [88.95, 21.6, 89.95, 22.5]
+    fire_year_start_month: 11
+    landcover: mangrove
+  - id: chittagong-hill-tracts
+    name: { en: Chittagong Hill Tracts, bn: পার্বত্য চট্টগ্রাম, es: Colinas de Chittagong }
+    country: BD
+    bbox: [91.6, 21.6, 92.7, 23.7]
+    fire_year_start_month: 11
+    landcover: forest
+  - id: parana-delta
+    name: { en: Paraná Delta, bn: পারানা ব-দ্বীপ, es: Delta del Paraná }
+    country: AR
+    bbox: [-60.9, -34.3, -58.4, -32.0]
+    fire_year_start_month: 1
+    landcover: wetland
+  - id: corrientes
+    name: { en: Corrientes, bn: কোরিয়েন্তেস, es: Corrientes }
+    country: AR
+    bbox: [-59.0, -30.2, -56.0, -27.3]
+    fire_year_start_month: 7
+    landcover: grassland
+  # Country-wide boxes: many more API calls and much larger files. Enable when
+  # the plan allows (or when an archive CSV covers them in data/raw/archive/).
+  - id: bangladesh
+    enabled: false
+    name: { en: Bangladesh, bn: বাংলাদেশ, es: Bangladés }
+    country: BD
+    bbox: [88.0, 20.6, 92.7, 26.7]
+    fire_year_start_month: 11
+    landcover: crop_mosaic
+  - id: argentina
+    enabled: false
+    name: { en: Argentina, bn: আর্জেন্টিনা, es: Argentina }
+    country: AR
+    bbox: [-73.6, -55.1, -53.6, -21.8]
+    fire_year_start_month: 7
+    landcover: grassland
+
+# FIRMS source ids per sensor family. Only ids that the data_availability
+# endpoint lists are ever requested.
+sources:
+  MODIS: { sp: MODIS_SP, nrt: MODIS_NRT }
+  VIIRS_SNPP: { sp: VIIRS_SNPP_SP, nrt: VIIRS_SNPP_NRT }
+  VIIRS_NOAA20: { sp: VIIRS_NOAA20_SP, nrt: VIIRS_NOAA20_NRT }
+  VIIRS_NOAA21: { sp: VIIRS_NOAA21_SP, nrt: VIIRS_NOAA21_NRT }
+# Reference VIIRS satellite, in order of preference. The first one whose record
+# reaches the run date (within `reference_tolerance_days`) is used; Suomi-NPP
+# stopped delivering on 1 Nov 2026, so NOAA-20 is chosen automatically then.
+viirs_reference: [VIIRS_SNPP, VIIRS_NOAA20]
+reference_tolerance_days: 7
+# Extra VIIRS families to download as well (raw display only; not used for calibration).
+extra_families: []
+
+recent_days: 60          # last N days come from *_NRT until *_SP covers them
+open_chunk_days: 3       # NRT chunks ending this close to today are re-downloaded each run
+day_range:
+  start: 10              # probe once: largest DAY_RANGE the area API accepts, stepping down
+  min: 1
+
+http:
+  timeout_s: 60
+  retries: 6
+  backoff_s: 2.0
+rate_limit:
+  max_calls: 1000        # well under FIRMS's 5,000 transactions per 10 minutes
+  per_seconds: 600
+
+paths:
+  firms_cache: data/raw/firms_cache
+  archive: data/raw/archive
+  power: data/raw/power
+  eonet: data/raw/eonet
+  clean: data/clean
+  stage: data/stage
+  products: data-products
+  meta: data-products/meta
+
+clean:
+  modis_min_confidence: 30         # MODIS confidence 0-100: keep >= 30 (nominal + high)
+  viirs_confidence: [n, h]         # VIIRS l / n / h: keep nominal + high
+  types_kept: [0]                  # FIRMS type 0 = presumed vegetation fire (drop volcano / static / offshore)
+
+grid:
+  cell_km: 5.5
+  tile_deg: 2
+
+ml_inputs:
+  keep_share: 0.97                 # same cell selection as the demo exporter
+  max_cells_per_region: 700
+
+power:
+  parameters: [T2M, PRECTOTCORR, RH2M]
+  community: AG
+
+eonet:
+  min_events: 3

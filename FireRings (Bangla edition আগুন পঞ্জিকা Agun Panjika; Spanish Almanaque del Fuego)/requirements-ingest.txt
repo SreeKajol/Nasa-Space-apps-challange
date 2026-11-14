@@ -1,0 +1,8 @@
+# Real-data ingest (src/ingest) and pipeline (src/compute/pipeline). Install on top of
+# requirements-ml.txt, in the same venv (outside this folder: its name contains ';').
+requests>=2.31      # tested 2.34.2
+python-dotenv>=1.0  # tested 1.2.4
+PyYAML>=6.0         # tested 6.0.3
+tqdm>=4.66          # tested 4.70.1
+matplotlib>=3.8     # tested 3.11.2 (docs/figures in the data report)
+# optional: ruptures (PELT changepoints). Not required: the seam test uses Pettitt.

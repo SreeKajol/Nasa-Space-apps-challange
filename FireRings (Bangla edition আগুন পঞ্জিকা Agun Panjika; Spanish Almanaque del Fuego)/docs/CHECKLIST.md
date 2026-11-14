@@ -122,3 +122,32 @@ Scores move a few points between runs. Measure the deployed site too: real hosts
 - ⚠ Team member names, repository URL, method PDF URL (placeholders — see README).
 - ⚠ `m.p_conf_v` must state the pipeline's real confidence filter.
 - ⚠ Replace the synthetic data with the pipeline's `region/*.json` as soon as it exists.
+
+## ML Intelligence layer (`firerings-ml-layer-master-prompt.md`)
+
+Verification: **P** = Python test (`python -m pytest tests/ml`), **T** = vitest, **B** = browser, **C** = code review. Numbers: [ml_method.md](ml_method.md).
+
+| # | Requirement | Where | Status |
+|---|---|---|---|
+| M0 | Additive only: v1 files and behaviour unchanged; hidden when `ml/index.json` is missing | 7 insertion points ([ml_frontend_plan.md](ml_frontend_plan.md)) | ✅ T C |
+| M1 | Feature table (cell × month), leakage-free, schema doc | `src/compute/ml/features.py`, [ml_features.md](ml_features.md) | ✅ P |
+| M2 | B0 ratio baseline vs XGBoost (Poisson, CPU hist) vs RF; temporal + 2° spatial block CV; MAE, RMSE log1p, bias, Spearman, r | `harmonize_ml.py`, `baseline.py` | ✅ P |
+| M3 | Split conformal, normalized, Mondrian by land cover and country (+ activity); 90% target; per-group coverage, flags < 85%; area intervals approximate | `conformal.py` | ✅ P |
+| M4 | TreeSHAP global top 10, binned dependence, local region-month top ± 3, EN/BN/ES labels | `explain.py`, `config.py` | ✅ P |
+| M5 | FireCast: climatology + persistence baselines, LOYO hindcast, temperature calibration, reliability, Brier, RPSS + bootstrap CI, LAC sets, region + cell outputs | `firecast.py` | ✅ P |
+| M6 | Raw-trained vs harmonized-trained trend (Theil–Sen, Mann–Kendall) | `firecast.trend_evidence` | ✅ P B |
+| M7 | Grounded EN/BN/ES narrative; LLM polishing off; number guard | `narrative.py` | ✅ P |
+| M8 | Contract v1.1 outputs + schema validation + model card; `make ml` / `npm run ml` | `run.py`, `schema.py` | ✅ P |
+| M9 | Intelligence tab: coverage dot-and-target, SHAP bars, 2 dependence charts, benchmark, model card | `src/ml/IntelligenceTab.tsx` | ✅ T B |
+| M10 | "Why this month?" waterfall + interval line + grounded sentence in the month drawer | `src/ml/WhyThisMonth.tsx` | ✅ T B |
+| M11 | FireCast details: stacked bar, set chips, skill badge (never probabilities without it), drivers, reliability toggle | `src/ml/OutlookDetails.tsx` | ✅ T B |
+| M12 | Risk map layer (off by default, `risk=1`): ramp, grey = no skill, dotted = set of 3, hover, click → drawer | `src/ml/RiskLayer.tsx` | ✅ B |
+| M13 | Alert strip: skilful AND P(above) ≥ 0.5 AND set excludes below; dismissible per area per session | `src/ml/inline.tsx` | ✅ T |
+| M14 | Demo moment "Train on raw vs harmonized" | `IntelligenceTab.tsx` | ✅ T B |
+| M15 | i18n EN/BN/ES with Bangla digits; View as table; aria-live; keyboard; reduced motion; provenance badges; ≤ 60 KB extra JS | `src/ml/i18n/*`, build output (~20 KB gz, lazy) | ✅ T C |
+| M16 | Mock data for every new field, labelled demo | `src/ml/mock.ts` | ✅ T |
+
+Honest outcomes on the demo inputs:
+
+- XGBoost beats the ratio method per cell. For area totals, raw MODIS already tracks VIIRS closely (r ≈ 0.99), so every method ties there.
+- FireCast does **not** beat climatology on the synthetic record: the demo fire series has no forecastable weather signal. The UI therefore says "No reliable outlook", and the alert strip stays silent.
