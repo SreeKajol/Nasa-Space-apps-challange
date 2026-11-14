@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { deriveRegion } from "../compute/derive";
 import { MockAdapter } from "./mock";
+import { RealWithDemoFallback } from "./provider";
 import { parseHotspotCsv, StaticJsonAdapter } from "./staticJson";
-import { DataError, type GridTile, type IndexMeta, type RegionData } from "./types";
+import { DataError, type DataProvider, type GridTile, type IndexMeta, type RegionData } from "./types";
 import { regionView } from "./view";
 
 const NOW = new Date("2026-11-05T12:00:00Z");
@@ -153,5 +155,69 @@ describe("StaticJsonAdapter", () => {
   it("parses hotspot CSVs", () => {
     const rows = parseHotspotCsv("latitude,longitude,acq_datetime_utc,sensor,satellite,confidence,frp_mw,type\n22.1,90.2,2024-03-01T07:30:00Z,VIIRS,NOAA-20,n,12.5,0\n");
     expect(rows).toEqual([{ latitude: 22.1, longitude: 90.2, acq_datetime_utc: "2024-03-01T07:30:00Z", sensor: "VIIRS", satellite: "NOAA-20", confidence: "n", frp_mw: 12.5, type: 0 }]);
+  });
+});
+
+describe("Real-data snapshot (make snapshot)", () => {
+  const base: IndexMeta = {
+    version: "1",
+    generated_at: "2026-11-14T06:00:00Z",
+    first_month: "2020-01",
+    last_month: "2020-03",
+    presets: [
+      { id: "p1", name: { en: "P1", bn: "P1", es: "P1" }, country: "BD", bbox: [90, 22, 91, 23] },
+      { id: "p2", name: { en: "P2", bn: "P2", es: "P2" }, country: "AR", bbox: [-60, -34, -59, -33] },
+    ],
+    viirs_start: "2018-04",
+    sensors: ["MODIS_Terra", "MODIS_Aqua", "VIIRS_NOAA20"],
+    grid: { cell_km: 5.5, tile_deg: 2 },
+    source: "cache",
+    data_mode: "real",
+    regions_status: { p1: "real", p2: "missing" },
+  };
+  const rows = [{ ym: "2020-01", harmonized: 1, low: 0.5, high: 2, modis_raw: 1, viirs_raw: null }];
+  const regionFile = { id: "p1", fire_year_start_month: 11, ...deriveRegion(rows, 11) };
+  const demoRegion = { ...regionFile, id: "p2", source: "demo" } as RegionData;
+  const demo: DataProvider = {
+    kind: "demo",
+    getIndex: async () => base,
+    getRegion: async () => demoRegion,
+    getHotspots: async () => ({ rows: [], source: "demo" }),
+    getCells: async () => ({ months: [], cell_deg: 0.05, cells: [], source: "demo" }),
+  };
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  function stub(map: Record<string, unknown>) {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        const key = url.replace("https://real.test/", "");
+        return key in map ? new Response(JSON.stringify(map[key]), { status: 200 }) : new Response("nope", { status: 404 });
+      }),
+    );
+  }
+
+  it("labels the snapshot cache, with the run date", async () => {
+    stub({ "index.json": base, "region/p1.json": regionFile });
+    const r = await new StaticJsonAdapter("https://real.test").getRegion({ presetId: "p1" });
+    expect(r.source).toBe("cache");
+    expect(r.saved_at).toBe("2026-11-14T06:00:00Z");
+  });
+
+  it("falls back to demo only for areas the real run has no data for", async () => {
+    stub({ "index.json": base, "region/p1.json": regionFile });
+    const p = new RealWithDemoFallback(new StaticJsonAdapter("https://real.test"), () => demo);
+    expect((await p.getRegion({ presetId: "p1" })).source).toBe("cache");
+    expect((await p.getRegion({ presetId: "p2" })).source).toBe("demo");
+    // A real area without a CSV for a year had no detections: empty, never demo rows.
+    expect(await p.getHotspots({ presetId: "p1" }, 2003)).toEqual({ rows: [], source: "cache" });
+    expect((await p.getHotspots({ presetId: "p2" }, 2003)).source).toBe("demo");
+  });
+
+  it("keeps the old behaviour for pipelines without data_mode real", async () => {
+    stub({ "index.json": { ...base, data_mode: undefined, regions_status: undefined, source: "live" } });
+    const p = new RealWithDemoFallback(new StaticJsonAdapter("https://real.test"), () => demo);
+    await expect(p.getRegion({ presetId: "p1" })).rejects.toMatchObject({ code: "missing" });
   });
 });

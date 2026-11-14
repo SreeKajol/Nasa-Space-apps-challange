@@ -39,3 +39,7 @@ public/demo-data/
 data-products/
 __pycache__/
 .pytest_cache/
+
+# Real-data ingest: secrets and regenerable raw/intermediate caches.
+.env
+/data/

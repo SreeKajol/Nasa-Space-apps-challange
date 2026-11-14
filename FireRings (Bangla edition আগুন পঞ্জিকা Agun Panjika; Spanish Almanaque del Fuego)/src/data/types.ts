@@ -32,6 +32,27 @@ export interface IndexMeta {
   sensors: string[];
   grid: { cell_km: number; tile_deg: number };
   source: Provenance;
+
+  /* ---- additive, real-data runs only (make real / make snapshot) ---- */
+  /** "real" when the files come from real NASA data; absent for demo/older pipelines. */
+  data_mode?: "real" | "demo";
+  /** Month still in progress when the run was made. */
+  partial_month?: string | null;
+  /** FIRMS family used as the VIIRS calibration target, e.g. "VIIRS_NOAA20". */
+  viirs_reference?: string;
+  /** FIRMS source ids actually requested, e.g. ["MODIS_NRT", "MODIS_SP", ...]. */
+  sources_used?: string[];
+  /** First/last date actually used per FIRMS source. */
+  source_dates?: Record<string, { first: string; last: string }>;
+  /** What the FIRMS data_availability endpoint listed at fetch time. */
+  availability?: Record<string, { first: string; last: string }>;
+  /** Access dates (ISO) per service, for the data citation. */
+  access?: { firms?: string | null; power?: string | null; eonet?: string | null };
+  /** Per preset: "real" or "missing" (missing presets fall back to demo data). */
+  regions_status?: Record<string, "real" | "missing">;
+  notes?: string[];
+  /** When `make snapshot` copied the run into the app. */
+  snapshot_at?: string;
 }
 
 export interface MonthlyPoint {
@@ -88,6 +109,35 @@ export interface ContextPoint {
   rh_pct: number;
 }
 
+export interface SeamTestResult {
+  break_ym: string | null;
+  p: number;
+  k: number;
+  significant: boolean;
+  near_viirs_start: boolean;
+}
+
+export interface SeamTest {
+  method: string;
+  alpha: number;
+  n: number;
+  viirs_start: string;
+  raw: SeamTestResult;
+  harmonized: SeamTestResult;
+}
+
+/** validation/eonet_{id}.json (real-data runs): independent check against NASA EONET events. */
+export interface EonetValidation {
+  status: "ok" | "insufficient events" | "unavailable";
+  matched: number;
+  total: number;
+  hit_rate: number | null;
+  base_rate?: number;
+  min_events?: number;
+  months_flagged: string[];
+  events: { id: string; title: string; date: string; ym: string; flagged?: boolean; link?: string }[];
+}
+
 export interface OutlookPoint {
   ym: string;
   p_below: number;
@@ -108,6 +158,8 @@ export interface RegionData {
   validation?: Validation;
   context?: ContextPoint[];
   outlook?: OutlookPoint[];
+  /** Additive (real-data runs): changepoint test on the raw and harmonized series. */
+  seam_test?: SeamTest;
 
   /* ---- set by the adapter at load time, not part of the files ---- */
   /** True when the area is a custom drawn polygon (summed grid cells). */

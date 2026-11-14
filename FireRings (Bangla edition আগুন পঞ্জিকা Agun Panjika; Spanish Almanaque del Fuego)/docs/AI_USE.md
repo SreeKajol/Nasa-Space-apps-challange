@@ -11,6 +11,14 @@ Team HalluciNation used AI coding assistants to build FireRings. This file logs 
    - Part 2: frontend in `src/ml`
 
    Plans: `docs/ml_plan.md` and `docs/ml_frontend_plan.md`. Keep a copy of the prompt in `docs/`.
+3. **Real NASA data prompt**: switch to real FIRMS / POWER / EONET data, additively. It covers:
+   - ingest in `src/ingest`;
+   - clean, grid and harmonize in `src/compute/pipeline`;
+   - the seam test;
+   - `make fetch | real | snapshot`;
+   - the Method-tab card and citation.
+
+   Plan: `docs/real_data_plan.md`. The API key stays in `.env`; it is never committed and never logged.
 
 Tool: Claude Code (Anthropic), working inside the repository. Humans reviewed every change, ran the tests, and own the result.
 

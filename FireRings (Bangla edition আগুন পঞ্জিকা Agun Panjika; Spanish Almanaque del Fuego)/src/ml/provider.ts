@@ -38,7 +38,7 @@ async function fetchJson<T>(url: string): Promise<{ data: T; cached: boolean } |
 
 export class MlStaticAdapter implements MlProvider {
   private cached = false;
-  private source: "live" | "demo" = "live";
+  private source: "live" | "cache" | "demo" = "live";
   constructor(
     private readonly base: string,
     readonly kind: "static" | "demo-static" = "static",
@@ -53,7 +53,7 @@ export class MlStaticAdapter implements MlProvider {
   async getIndex(): Promise<MlIndex | null> {
     const ix = await this.get<MlIndex>("index.json");
     if (!ix || ix.version !== "1.1-ml" || !ix.models?.harmonization) return null;
-    this.source = ix.source === "demo" ? "demo" : "live";
+    this.source = ix.source === "demo" ? "demo" : ix.source === "cache" ? "cache" : "live";
     return ix;
   }
 
@@ -67,7 +67,7 @@ export class MlStaticAdapter implements MlProvider {
 
   provenance(): Provenance {
     if (this.source === "demo") return "demo";
-    return this.cached ? "cache" : "live";
+    return this.cached || this.source === "cache" ? "cache" : "live";
   }
 
   methodUrl(): string | null {

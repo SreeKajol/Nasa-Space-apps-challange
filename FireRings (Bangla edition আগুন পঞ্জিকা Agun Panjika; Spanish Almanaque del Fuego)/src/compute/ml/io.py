@@ -97,6 +97,10 @@ def load_observations(data_dir: Path, index: dict[str, Any], regions: dict[str, 
     else:
         raise FileNotFoundError(f"No ML inputs in {data_dir / 'ml_inputs'} (cell_month.parquet or demo_cells.json).")
 
+    if "tile" not in obs.columns:  # spatial CV blocks; the demo simulator adds it, real inputs derive it here
+        from .config import TILE_DEG
+
+        obs["tile"] = [tile_id(a, b, TILE_DEG) for a, b in zip(obs["lat"], obs["lon"])]
     if "ndvi" not in obs.columns or obs["ndvi"].isna().all():
         obs["ndvi"] = np.nan
         notes.append("NDVI unavailable: filled as missing (XGBoost handles NaN).")

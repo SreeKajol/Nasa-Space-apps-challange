@@ -11,7 +11,7 @@ Built for NASA Space Apps 2026 (challenge: *Harmonization of MODIS and VIIRS Hot
 ```sh
 npm install
 npm run dev        # http://localhost:5173
-npm test           # 44 unit tests (statistics, adapters, data contract, i18n, URL state, ML layer)
+npm test           # 47 unit tests (statistics, adapters, data contract, i18n, URL state, ML layer, real-data snapshot)
 npm run build      # typecheck + static build into dist/
 npm run preview    # serve dist/ locally (service worker + offline mode active here)
 ```
@@ -26,6 +26,7 @@ The npm scripts call each tool through `node node_modules/...` instead of the ba
 | --- | --- | --- |
 | **MockAdapter** (synthetic, generated in the browser) | default; no configuration | "Demo data" in the header, `demo` on every number block |
 | **StaticJsonAdapter** (the pipeline's files) | `VITE_DATA_BASE_URL` is set at build time | `live`, or `cache` when served from a saved copy; the file's own `source` otherwise |
+| **Real NASA data snapshot** | `public/data/index.json` has `"data_mode": "real"` (after `make snapshot`); detected at dev/build time | `cache` with the run's date; no "Demo data" badge. A preset without real data falls back to demo, labelled `demo` |
 
 All data access goes through the single `DataProvider` interface (`src/data/types.ts`). Components never know which adapter is active. When `VITE_DATA_BASE_URL` is set, Settings also lets you switch back to the demo data.
 
@@ -37,6 +38,39 @@ VITE_DATA_BASE_URL=./demo-data npm run dev
 ```
 
 The demo files keep `"source": "demo"`, so the app labels them honestly. Grid tiles are generated only around the Sundarbans preset, so custom areas drawn there work in static mode. Elsewhere you get the "no grid files" message.
+
+## Reproduce with real data
+
+```sh
+cp .env.example .env          # then add your FIRMS_MAP_KEY (free: https://firms.modaps.eosdis.nasa.gov/api/map_key/)
+pip install -r requirements-ml.txt -r requirements-ingest.txt   # venv OUTSIDE this folder (its name contains ';')
+make real                     # = npm run real   (PYTHON=/path/to/venv/python)
+make snapshot                 # = npm run snapshot: publish data-products/ to public/data/
+npm run dev                   # the app now opens on the real data (badge: cache + run date)
+```
+
+- **`make fetch`** downloads into resumable caches under `data/raw/`; a re-run downloads nothing new. It covers NASA FIRMS hotspots (MODIS + the reference VIIRS satellite), NASA POWER monthly climate per region, and NASA EONET wildfire events.
+  - `make fetch ARGS=--dry-run` prints the planned number of FIRMS calls.
+  - FIRMS CSVs you already have go in `data/raw/archive/` and replace API calls for the dates they cover.
+- **`make real`** chains fetch → clean / 5.5 km grid / harmonization (`src/compute/pipeline`) → contract files with the tested statistics (`scripts/export-contract.ts`) → ML layer → seam test → EONET check. It also writes `docs/data_report.md`.
+- **Reference satellite.** Suomi-NPP stopped delivering on 1 Nov 2026, so the pipeline calibrates on NOAA-20 and `viirs_start` follows from FIRMS's own availability dates. Both are logged and shown in the Method tab.
+- **Without a key,** FIRMS is skipped with a clear message and the previous snapshot (or the demo data) stays in place. Nothing is overwritten.
+- **Settings:** `config/real_data.yaml` (regions, sources, chunking, rate limit, cache paths). Plan and decisions: [docs/real_data_plan.md](docs/real_data_plan.md).
+- After `make snapshot` the site runs fully offline: every data file is local, and only map imagery needs the network.
+
+## Data citation
+
+- **NASA FIRMS.** We acknowledge the use of data and/or imagery from NASA's Fire Information for Resource Management System (FIRMS) (https://www.earthdata.nasa.gov/data/tools/firms), part of NASA's Earth Science Data and Information System (ESDIS). Products:
+  - MODIS Collection 6.1 active fire detections (MCD14ML; MCD14DL NRT, doi:10.5067/FIRMS/MODIS/MCD14DL.NRT.0061)
+  - VIIRS 375 m active fire detections:
+    - Suomi-NPP VNP14IMG (doi:10.5067/FIRMS/VIIRS/VNP14IMGT_NRT.002)
+    - NOAA-20 VJ114IMG (doi:10.5067/FIRMS/VIIRS/VJ114IMGT_NRT.002)
+    - NOAA-21 VJ214IMG (doi:10.5067/FIRMS/VIIRS/VJ214IMGT_NRT.002)
+- **NASA POWER.** These data were obtained from the NASA Langley Research Center (LaRC) POWER Project funded through the NASA Earth Science/Applied Science Program.
+- **NASA EONET.** Natural event data from the NASA Earth Observatory Natural Event Tracker (EONET), API v3.
+- **NASA GIBS.** We acknowledge the use of imagery provided by services from NASA's Global Imagery Browse Services (GIBS), part of NASA's Earth Science Data and Information System (ESDIS).
+
+Access dates of each run are recorded in `index.json` (`access`). They appear with the citation in the Method & data tab and in `docs/data_report.md`.
 
 ## Data contract — what the app assumes beyond the brief
 
@@ -116,9 +150,13 @@ src/i18n/{en,bn,es}.json   every UI string; summaries are templates with {placeh
 src/state/                 URL state, device preferences, app context
 src/components/            shell, top bar, KPIs, drawers, map, charts (D3), method tab
 src/almanac/               printable A4 page (second Vite entry: almanac/index.html)
+src/ingest/                real NASA data: FIRMS (availability, plan, cache, normalize), POWER, EONET
+src/compute/pipeline/      real-data clean -> 5.5 km grid -> harmonization -> contract stage
+src/compute/seam.py        sensor-break (Pettitt) test; src/compute/data_report.py: docs/data_report.md
 src/compute/ml/            Python ML layer: features, harmonize_ml, conformal, explain, firecast, narrative, run
 src/ml/                    ML frontend: MLProvider (static + mock), Intelligence tab, drawer section, risk layer
 tests/ml/                  Python tests for the ML layer
+tests/ingest/              Python tests for ingest, pipeline, seam (no network)
 public/sw.js               service worker
 scripts/generate-demo-data.ts
 ```
@@ -128,7 +166,7 @@ scripts/generate-demo-data.ts
 - Team member names: `AboutDialog` in `src/components/TopBar.tsx`
 - Repository URL: same dialog
 - Method PDF URL: `METHOD_PDF` in `src/components/MethodTab.tsx`
-- `m.p_conf_v` ("MODIS ≥ 30%; VIIRS nominal or high") in `src/i18n/*.json`: set it to the pipeline's real confidence filter
+- `m.p_conf_v` ("MODIS ≥ 30%; VIIRS nominal or high") in `src/i18n/*.json` matches the real pipeline's filter (`config/real_data.yaml` → `clean`); keep them in sync if you change it
 
 ## Performance
 

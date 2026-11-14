@@ -66,7 +66,8 @@ export interface MlLeadRegion {
 export interface MlIndex {
   version: "1.1-ml";
   generated_at: string;
-  source: "live" | "demo";
+  /** "cache" = a real-data snapshot published by `make snapshot`. */
+  source: "live" | "cache" | "demo";
   inputs: {
     first_month: string;
     last_month: string;
